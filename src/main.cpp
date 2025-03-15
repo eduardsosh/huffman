@@ -3,6 +3,7 @@
 #include<map>
 #include<vector>
 #include<queue>
+#include<stdio.h>
 
 struct Node{
     int weigth;
@@ -24,7 +25,10 @@ struct Node{
     }
 };
 
+typedef std::pair<char,int> charLenPair;
+
 void print_map(std::map<char,int> *mmap){
+    printf("Printing map: \n");
     for(auto it = mmap->begin();it != mmap->end(); it++){
         std::cout << " '" << it->first << "' " << it->second << std::endl;
     }
@@ -76,6 +80,35 @@ void printTree(Node* root, int space = 0, int height = 1) {
     printTree(root->left, space);
 }
 
+// DFS to get symbols and their length
+void traverseAndCount(Node* cNode, int depth, std::vector<charLenPair>& vecpoint){
+    // Base case
+    if(cNode->ch){
+        vecpoint.push_back({cNode->ch,depth});
+        return;
+    }
+
+    if(cNode->right != nullptr){
+        traverseAndCount(cNode->right,depth+1,vecpoint);
+    }
+    if(cNode->left != nullptr){
+        traverseAndCount(cNode->left,depth+1,vecpoint);
+    }
+    return;
+}
+
+std::vector<charLenPair>& getCodeVector(Node* treeRoot){
+    static std::vector<charLenPair> clv;
+    traverseAndCount(treeRoot,0,clv);
+    return clv; 
+}
+
+void print_clp_vec(std::vector<charLenPair> &clv){
+    for(auto i : clv){
+        std::cout<< i.first << " :" << i.second << "\n";
+    }
+}
+
 int main() {
     std::ifstream file("input.txt");
 
@@ -100,6 +133,11 @@ int main() {
     file.close();
 
     Node* tree = get_tree(&frequency_table);
+    printf("Printing tree:\n");
     printTree(tree);
+
+    std::vector<charLenPair> cvl;
+    cvl = getCodeVector(tree);
+    print_clp_vec(cvl);
     return 0;
 }
