@@ -4,6 +4,10 @@
 #include<vector>
 #include<queue>
 #include<stdio.h>
+#include<algorithm>
+#include<unordered_map>
+#include<string>
+#include<bitset>
 
 struct Node{
     int weigth;
@@ -25,12 +29,25 @@ struct Node{
     }
 };
 
-typedef std::pair<char,int> charLenPair;
+typedef std::pair<char,int> CharIntPair;
+typedef std::pair<int,int> IntPair;
+
 
 void print_map(std::map<char,int> *mmap){
+    if(mmap->begin()++ == mmap->end()) return;
+
     printf("Printing map: \n");
     for(auto it = mmap->begin();it != mmap->end(); it++){
         std::cout << " '" << it->first << "' " << it->second << std::endl;
+    }
+}
+
+void print_uo_map(const std::unordered_map<char, IntPair> &map) {
+    for (const auto &it : map) {
+        IntPair code_len_pair = it.second;
+        std::bitset<16> bit_repr(code_len_pair.first);
+        std::string str_repr = bit_repr.to_string().substr(16 - code_len_pair.second);
+        printf("[%c : %s]\n", it.first, str_repr.c_str());
     }
 }
 
@@ -47,6 +64,10 @@ Node* get_tree(std::map<char,int> *mmap){
     for(auto it = mmap->begin();it != mmap->end(); it++){
         Node* new_node = new Node(it->second,it->first);
         pq.push(new_node);
+    }
+    if(pq.size() == 1){
+        printf("111\n");
+        return pq.top();
     }
 
     while(pq.size() > 1){
@@ -81,7 +102,7 @@ void printTree(Node* root, int space = 0, int height = 1) {
 }
 
 // DFS to get symbols and their length
-void traverseAndCount(Node* cNode, int depth, std::vector<charLenPair>& vecpoint){
+void traverseAndCount(Node* cNode, int depth, std::vector<CharIntPair>& vecpoint){
     // Base case
     if(cNode->ch){
         vecpoint.push_back({cNode->ch,depth});
@@ -97,15 +118,48 @@ void traverseAndCount(Node* cNode, int depth, std::vector<charLenPair>& vecpoint
     return;
 }
 
-std::vector<charLenPair>& getCodeVector(Node* treeRoot){
-    static std::vector<charLenPair> clv;
+std::vector<CharIntPair>& getCodeVector(Node* treeRoot){
+    static std::vector<CharIntPair> clv;
     traverseAndCount(treeRoot,0,clv);
     return clv; 
 }
 
-void print_clp_vec(std::vector<charLenPair> &clv){
+void print_clp_vec(std::vector<CharIntPair> &clv){
     for(auto i : clv){
         std::cout<< i.first << " :" << i.second << "\n";
+    }
+}
+
+struct{
+    bool operator()(CharIntPair a, CharIntPair b) const {
+        if (a.second != b.second) {
+            return a.second < b.second; // Sort by second value first
+        }
+        return a.first < b.first; // If second values are equal, sort by first
+    }
+}VecComp;
+
+void fill_codes_table(
+    std::unordered_map<char, IntPair> &table, 
+    std::vector<CharIntPair> &cvl
+) {
+    if (cvl.empty()) return;
+
+    int prev_length = 0;
+    int code = 0;
+
+    for (size_t idx = 0; idx < cvl.size(); ++idx) {
+        auto& i = cvl[idx];
+
+        // idx=0 handles first case
+        if (idx > 0 && i.second > prev_length) {
+            code <<= (i.second - prev_length);
+        }
+
+        table[i.first] = {code, i.second};
+        code++;
+
+        prev_length = i.second;
     }
 }
 
@@ -136,8 +190,16 @@ int main() {
     printf("Printing tree:\n");
     printTree(tree);
 
-    std::vector<charLenPair> cvl;
+    std::vector<CharIntPair> cvl;
     cvl = getCodeVector(tree);
+    printf("Code vector: \n");
+    //print_clp_vec(cvl);
+    std::sort(cvl.begin(),cvl.end(),VecComp);
     print_clp_vec(cvl);
+    std::unordered_map<char,IntPair> encoding_table;
+
+    fill_codes_table(encoding_table,cvl);
+    print_uo_map(encoding_table);
+    
     return 0;
 }
