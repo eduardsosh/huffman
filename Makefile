@@ -11,14 +11,27 @@ all: $(TARGET)
 	@$(TARGET)
 
 $(TARGET): $(OBJECTS)
-	@mkdir -p $(OBJ_DIR)
-	@$(CXX) $(CXXFLAGS) $^ -o $@
+ifeq ($(OS),Windows_NT)
+	@if not exist "$(OBJ_DIR)" mkdir "$(OBJ_DIR)"
+else
+	@mkdir -p "$(OBJ_DIR)"
+endif
+	@$(CXX) $(CXXFLAGS) $(OBJECTS) -o $(TARGET)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
-	@mkdir -p $(OBJ_DIR)
+ifeq ($(OS),Windows_NT)
+	@if not exist "$(OBJ_DIR)" mkdir "$(OBJ_DIR)"
+else
+	@mkdir -p "$(OBJ_DIR)"
+endif
 	@$(CXX) $(CXXFLAGS) -c $< -o $@
 
 clean:
-	rm -rf $(OBJ_DIR)/*.o $(TARGET)
+ifeq ($(OS),Windows_NT)
+	@if exist "$(OBJ_DIR)\*.o" del /F "$(OBJ_DIR)\*.o"
+	@if exist "$(TARGET)" del /F "$(TARGET)"
+else
+	@rm -rf $(OBJ_DIR)/*.o $(TARGET)
+endif
 
 .PHONY: all clean
